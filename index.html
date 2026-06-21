@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Filament POS</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #111;
+            color: white;
+            text-align: center;
+            margin: 0;
+        }
+
+        .page { display: none; padding: 20px; }
+        .active { display: block; }
+
+        h1 { margin-bottom: 20px; }
+
+        input, select {
+            padding: 15px;
+            margin: 10px;
+            width: 250px;
+            font-size: 18px;
+            border-radius: 10px;
+            border: none;
+        }
+
+        button {
+            padding: 15px 25px;
+            margin: 10px;
+            font-size: 18px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .big-btn {
+            width: 260px;
+            background: #28a745;
+            color: white;
+        }
+
+        .price-buttons button {
+            background: #444;
+            color: white;
+            width: 70px;
+        }
+
+        .tip-buttons button {
+            width: 70px;
+            background: #333;
+            color: white;
+        }
+
+        .selected {
+            background: #007bff !important;
+        }
+
+        .card {
+            background: #222;
+            padding: 20px;
+            border-radius: 15px;
+            display: inline-block;
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #receiptArea, #receiptArea * {
+                visibility: visible;
+            }
+            #receiptArea {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                color: black;
+                background: white;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- PAGE 1 -->
+<div id="page1" class="page active">
+    <h1>Filament POS</h1>
+
+    <div class="card">
+
+        <h3>Select Spool Price</h3>
+        <div class="price-buttons">
+            <button onclick="setPrice(10)">£10</button>
+            <button onclick="setPrice(15)">£15</button>
+            <button onclick="setPrice(20)">£20</button>
+        </div>
+
+        <input type="number" id="price" value="15">
+
+        <br>
+
+        <input type="number" id="usedGrams" placeholder="Used Filament (g)">
+
+        <br>
+
+        <button class="big-btn" onclick="goToPayment()">Checkout</button>
+    </div>
+</div>
+
+<!-- PAGE 2 -->
+<div id="page2" class="page">
+    <h1>Payment</h1>
+
+    <div class="card">
+        <p id="baseCost"></p>
+
+        <select id="paymentMethod">
+            <option value="Cash">Cash</option>
+            <option value="Card">Card</option>
+        </select>
+
+        <h3>Tip</h3>
+
+        <div class="tip-buttons" id="tipButtons">
+            <button onclick="setTip(10, this)">10%</button>
+            <button onclick="setTip(20, this)">20%</button>
+            <button onclick="setTip(30, this)">30%</button>
+            <button onclick="setTip(40, this)">40%</button>
+            <button onclick="setTip(50, this)">50%</button>
+        </div>
+
+        <input type="number" id="customTip" placeholder="Custom %">
+
+        <br>
+
+        <button class="big-btn" onclick="showReceipt()">Confirm</button>
+    </div>
+</div>
+
+<!-- PAGE 3 -->
+<div id="page3" class="page">
+    <h1>Receipt</h1>
+
+    <div id="receiptArea" class="card">
+        <p id="receipt"></p>
+    </div>
+
+    <button onclick="printReceipt()">🖨️ Print</button>
+    <br>
+    <button onclick="restart()">New Order</button>
+</div>
+
+<script>
+    const totalGrams = 1000;
+
+    let used = 0;
+    let cost = 0;
+    let selectedTip = 0;
+    let price = 15;
+
+    function setPrice(val) {
+        price = val;
+        document.getElementById("price").value = val;
+    }
+
+    function goToPayment() {
+        price = document.getElementById("price").value;
+        used = document.getElementById("usedGrams").value;
+
+        cost = (price / totalGrams) * used;
+
+        document.getElementById("baseCost").innerText =
+            "Base Cost: £" + cost.toFixed(2);
+
+        switchPage(2);
+    }
+
+    function setTip(percent, button) {
+        selectedTip = percent;
+
+        document.querySelectorAll("#tipButtons button")
+            .forEach(btn => btn.classList.remove("selected"));
+
+        button.classList.add("selected");
+
+        document.getElementById("customTip").value = "";
+    }
+
+    function showReceipt() {
+        let method = document.getElementById("paymentMethod").value;
+
+        let custom = document.getElementById("customTip").value;
+        let tipPercent = custom ? custom : selectedTip;
+
+        let tipAmount = cost * (tipPercent / 100);
+        let total = cost + tipAmount;
+
+        document.getElementById("receipt").innerHTML =
+            "Filament Used: " + used + "g<br>" +
+            "Base Cost: £" + cost.toFixed(2) + "<br>" +
+            "Tip (" + tipPercent + "%): £" + tipAmount.toFixed(2) + "<br>" +
+            "Payment: " + method + "<br>" +
+            "<strong>Total: £" + total.toFixed(2) + "</strong>";
+        
+        switchPage(3);
+    }
+
+    function printReceipt() {
+        window.print();
+    }
+
+    function restart() {
+        selectedTip = 0;
+        document.getElementById("usedGrams").value = "";
+        document.getElementById("customTip").value = "";
+
+        document.querySelectorAll("#tipButtons button")
+            .forEach(btn => btn.classList.remove("selected"));
+
+        switchPage(1);
+    }
+
+    function switchPage(page) {
+        document.querySelectorAll(".page")
+            .forEach(p => p.classList.remove("active"));
+
+        document.getElementById("page" + page)
+            .classList.add("active");
+    }
+</script>
+
+</body>
+</html>
